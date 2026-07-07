@@ -1,0 +1,105 @@
+first install python and pip.
+and then execute below command using whl library.
+
+and create python virtual environment and activate.
+
+python -m venv venv
+.\venv\Scripts\activate
+
+after that
+
+pip install --no-index --find-links="C:\SDXL\whl_1" --find-links="C:\SDXL\whl" diffusers transformers accelerate safetensors sentencepiece scipy pillow torch torchvision torchaudio
+
+
+
+or you can download all needed envs using these command.
+
+1. Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+
+2. pip download diffusers transformers accelerate safetensors sentencepiece scipy pillow -d C:\SDXL\whl_1
+
+
+3. pip download torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu -d C:\SDXL\whl
+
+
+pip install --no-index --find-links="C:\SDXL\whl_1" --find-links="C:\SDXL\whl" diffusers transformers accelerate safetensors sentencepiece scipy pillow torch torchvision torchaudio
+
+
+
+finally download the huggingface sdxl model repository using this command.
+
+huggingface-cli download stabilityai/stable-diffusion-xl-base-1.0 --local-dir ./stable-diffusion-xl-base-1.0
+
+
+and here is modelling executing python script.
+
+only CPU option:
+
+
+################
+from diffusers import StableDiffusionXLPipeline
+import torch
+
+# 1. Load the pipeline to CPU directly
+pipe = StableDiffusionXLPipeline.from_single_file(
+    r"C:\SDXL\sd_xl_base_1.0.safetensors",
+    torch_dtype=torch.float32,
+    use_safetensors=True
+)
+pipe = pipe.to("cpu")
+
+# 2. Add CPU optimization to save RAM
+pipe.enable_attention_slicing()
+
+prompt = "now dog and cat are fighting each other this is the animal war, draw the picture as a modern style"
+
+# 3. Generate the image
+image = pipe(
+    prompt,
+    num_inference_steps=20,
+    height=1024,
+    width=1024
+).images[0]
+
+image.save("result.png")
+################
+
+
+
+GPU option:
+
+################
+
+from diffusers import StableDiffusionXLPipeline
+import torch
+
+# 1. Load the pipeline directly to GPU using float16 for speed and VRAM savings
+pipe = StableDiffusionXLPipeline.from_single_file(
+    r"C:\SDXL\sd_xl_base_1.0.safetensors",
+    torch_dtype=torch.float16,
+    use_safetensors=True
+)
+pipe = pipe.to("cuda")
+
+# 2. Add GPU optimizations to prevent Out-Of-Memory (OOM) errors
+pipe.enable_model_cpu_offload()  # Smartly moves parts of the model to CPU when not in use
+pipe.enable_vae_tiling()         # Saves VRAM during the high-resolution image decoding step
+
+prompt = "now dog and cat are fighting each other this is the animal war, draw the picture as a modern style"
+
+# 3. Generate the image using a GPU-supported random seed generator
+generator = torch.Generator("cuda").manual_seed(42)
+
+image = pipe(
+    prompt,
+    num_inference_steps=20,
+    height=1024,
+    width=1024,
+    generator=generator
+).images[0]
+
+image.save("result.png")
+
+
+################
