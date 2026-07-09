@@ -1,1 +1,2 @@
 whl.zip filter=lfs diff=lfs merge=lfs -text
+python-3.12.10-amd64.exe filter=lfs diff=lfs merge=lfs -text
